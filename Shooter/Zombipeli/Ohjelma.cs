@@ -18,7 +18,7 @@ namespace Program
         [STAThread]
         static void Main()
         {
-            using (var game = new Zombipeli())
+            using (var game = new ZombiPeli())
                 game.Run();
         }
     }
