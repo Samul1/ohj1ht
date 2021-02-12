@@ -49,7 +49,6 @@ public class ZombiPeli : PhysicsGame
         pelaajan1Ase = new AssaultRifle(30, 10);
         //pelaajan1Ase.Ammo.Value = 100; // Ammusten määrä
         pelaajan1Ase.ProjectileCollision = AmmusOsui;
-        pelaajan1Ase.Power.Value = 2000;
         pelaajan1Ase.CanHitOwner = false;
         pelaaja1.Add(pelaajan1Ase);
 
@@ -96,15 +95,15 @@ public class ZombiPeli : PhysicsGame
 
         // Vasensiipi
         LuoSeinat(200.0, 10, -300, 100);
-        LuoSeinat(10.0, 350.0, -400, -70);
-        LuoSeinat(10.0, 150.0, -200, -170);
-        LuoSeinat(200.0, 10.0, -300, -240);
+        LuoSeinat(10.0, 350.0, -405, -70);
+        LuoSeinat(10.0, 150.0, -205, -170);
+        LuoSeinat(190.0, 10.0, -305, -240);
 
         // Oikeasiipi
         LuoSeinat(200.0, 10, 300, -100);
-        LuoSeinat(10.0, 350, 400, 70);
-        LuoSeinat(10.0, 150.0, 200, 170);
-        LuoSeinat(200.0, 10.0, 300, 240);
+        LuoSeinat(10.0, 350, 405, 70);
+        LuoSeinat(10.0, 150.0, 205, 170);
+        LuoSeinat(190.0, 10.0, 305, 240);
     }
 
     /// <summary>
@@ -128,7 +127,7 @@ public class ZombiPeli : PhysicsGame
 
     PhysicsObject LuoPelaaja(double x, double y)
     {
-        PhysicsObject pelaaja = new PhysicsObject(25.0, 25.0);
+        PhysicsObject pelaaja = PhysicsObject.CreateStaticObject(25.0, 25.0);
         pelaaja.Shape = Shape.Circle;
         pelaaja.Color = Color.DarkBlue;
         pelaaja.X = x;
