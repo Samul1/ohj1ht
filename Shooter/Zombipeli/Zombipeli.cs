@@ -32,6 +32,18 @@ public class ZombiPeli : PhysicsGame
     PhysicsObject pelaaja1;
     //PhysicsObject pelaaja2;
 
+    // Luodaan zombeille attribuutit
+    IntMeter zombejaKentalla;
+    PhysicsObject zombi;
+    //PhysicsObject[] zombit = new PhysicsObject[50];
+
+    // Luodaan ammuksen attribuutti
+    //PhysicsObject ammus;
+
+    // Pelaajan pisteet
+    IntMeter pelaajanPisteet;
+
+
     #endregion
 
     public override void Begin()
@@ -39,8 +51,7 @@ public class ZombiPeli : PhysicsGame
         LuoKentta();
         AloitaPeli();
         AsetaOhjaimet();
-
-        
+        LisaaLaskurit();
     }
 
     public void AloitaPeli()
@@ -52,7 +63,45 @@ public class ZombiPeli : PhysicsGame
         pelaajan1Ase.CanHitOwner = false;
         pelaaja1.Add(pelaajan1Ase);
 
+        zombi = LuoZombi(0, 0);
+
         // pelaaja2 = LuoPelaaja(200.0, 0.0);
+    }
+
+    public void LisaaLaskurit()
+    {
+        pelaajanPisteet = LuoPisteLaskuri(Screen.Left + 100.0, Screen.Top - 100.0);
+        zombejaKentalla = LuoZombiLaskuri(Screen.Right - 100.0, Screen.Top - 100.0);
+    }
+
+    IntMeter LuoPisteLaskuri(double x, double y)
+    {
+        IntMeter laskuri = new IntMeter(0);
+
+        Label naytto = new Label();
+        naytto.BindTo(laskuri);
+        naytto.X = x;
+        naytto.Y = y;
+        naytto.TextColor = Color.BloodRed;
+        naytto.BorderColor = Level.BackgroundColor;
+        naytto.Color = Level.BackgroundColor;
+        Add(naytto);
+
+        return laskuri;
+    }
+
+    IntMeter LuoZombiLaskuri(double x, double y)
+    {
+        IntMeter laskuri = new IntMeter(0);
+        Label naytto = new Label();
+        naytto.BindTo(laskuri);
+        naytto.X = x;
+        naytto.Y = y;
+        naytto.TextColor = Color.BrightGreen;
+        naytto.BorderColor = Level.BackgroundColor;
+        naytto.Color = Level.BackgroundColor;
+        Add(naytto);
+        return laskuri;
     }
 
     /// <summary>
@@ -120,11 +169,18 @@ public class ZombiPeli : PhysicsGame
         seina.Restitution = 0.0;
         seina.X = x;
         seina.Y = y;
+        seina.Tag = "seina";
         Add(seina);
     }
 
     #endregion
 
+    /// <summary>
+    /// Luo pelaaja olion
+    /// </summary>
+    /// <param name="x">Pelaajan x-koordinaatit</param>
+    /// <param name="y">Pelaajan y-koordinaatit</param>
+    /// <returns></returns>
     PhysicsObject LuoPelaaja(double x, double y)
     {
         PhysicsObject pelaaja = PhysicsObject.CreateStaticObject(25.0, 25.0);
@@ -134,8 +190,50 @@ public class ZombiPeli : PhysicsGame
         pelaaja.Y = y;
         pelaaja.Restitution = 0.0;
         Add(pelaaja);
+        AddCollisionHandler(pelaaja, "zombi", ZombiOsuuPelaajaan);
         return pelaaja;
     }
+
+    #region Zombi
+
+    /// <summary>
+    /// DevTool luo zombi
+    /// poistetaan pelistä, kun ei enää tarvitse
+    /// </summary>
+    public void LuoZombi()
+    {
+
+        zombi = LuoZombi(0.0, 0.0);
+
+        zombejaKentalla.Value += 1;
+    }
+
+    /// <summary>
+    /// Luo zombi-olion
+    /// </summary>
+    /// <param name="x">zombin x-koordinaatit</param>
+    /// <param name="y">zombin y-koordinaatit</param>
+    /// <returns></returns>
+    PhysicsObject LuoZombi(double x, double y)
+    {
+        PhysicsObject zombi = new PhysicsObject(25.0, 25.0);
+        zombi.Shape = Shape.Circle;
+        zombi.Color = Color.Green;
+        zombi.X = x;
+        zombi.Y = y;
+        zombi.Restitution = 0.0;
+        zombi.Tag = "zombi";
+        Add(zombi);
+        return zombi;
+    }
+
+    public void ZombiOsuuPelaajaan(PhysicsObject pelaaja1, PhysicsObject kohde)
+    {
+        pelaaja1.Destroy();
+        MessageDisplay.Add("Hävisit pelin!");
+    }
+
+    #endregion
 
     #region Ase
 
@@ -146,6 +244,12 @@ public class ZombiPeli : PhysicsGame
     /// <param name="kohde">zombi</param>
     public void AmmusOsui(PhysicsObject ammus, PhysicsObject kohde)
     {
+        if (kohde == zombi)
+        {
+            pelaajanPisteet.Value += 1;
+            //zombejaKentalla.Value -= 1;
+            zombi.Destroy();
+        }
         ammus.Destroy();
     }
 
@@ -195,6 +299,8 @@ public class ZombiPeli : PhysicsGame
 
         Mouse.ListenMovement(0.1, Tahtaa, "Pelaaja 1: Tähtää aseella");
         Mouse.Listen(MouseButton.Left, ButtonState.Down, AmmuAseella, "Pelaaja1: Ammu aseella", pelaajan1Ase);
+
+        Keyboard.Listen(Key.Space, ButtonState.Pressed, LuoZombi, "Luo zombin kentälle"); // poistetaan pelistä, kun ei enää testauksessa.
 
         Keyboard.Listen(Key.F1, ButtonState.Pressed, ShowControlHelp, "Näytä ohjeet");
         Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Lopeta peli");
