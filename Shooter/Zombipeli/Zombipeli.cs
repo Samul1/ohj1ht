@@ -5,7 +5,7 @@ using Jypeli.Widgets;
 using System;
 using System.Collections.Generic;
 /// @author Samuli Juutinen
-/// @version 12.02.2021
+/// @version 16.02.2021
 /// <summary>
 /// Ylhäältäpäin kuvattu zombie räiskintä peli.
 /// </summary>
@@ -33,15 +33,19 @@ public class ZombiPeli : PhysicsGame
     //PhysicsObject pelaaja2;
 
     // Luodaan zombeille attribuutit
-    IntMeter zombejaKentalla;
-    PhysicsObject zombi;
-    //PhysicsObject[] zombit = new PhysicsObject[50];
+    Zombi zombi;
+    // Zombin HP
+    //int zombinHP;
 
     // Luodaan ammuksen attribuutti
     //PhysicsObject ammus;
 
+    PhysicsObject seina;
+
     // Pelaajan pisteet
     IntMeter pelaajanPisteet;
+
+    
 
 
     #endregion
@@ -59,7 +63,7 @@ public class ZombiPeli : PhysicsGame
         pelaaja1 = LuoPelaaja(-200.0, 0.0);
         pelaajan1Ase = new AssaultRifle(30, 10);
         //pelaajan1Ase.Ammo.Value = 100; // Ammusten määrä
-        pelaajan1Ase.ProjectileCollision = AmmusOsui;
+        //pelaajan1Ase.ProjectileCollision = AmmusOsui;
         pelaajan1Ase.CanHitOwner = false;
         pelaaja1.Add(pelaajan1Ase);
 
@@ -71,7 +75,6 @@ public class ZombiPeli : PhysicsGame
     public void LisaaLaskurit()
     {
         pelaajanPisteet = LuoPisteLaskuri(Screen.Left + 100.0, Screen.Top - 100.0);
-        zombejaKentalla = LuoZombiLaskuri(Screen.Right - 100.0, Screen.Top - 100.0);
     }
 
     IntMeter LuoPisteLaskuri(double x, double y)
@@ -90,19 +93,6 @@ public class ZombiPeli : PhysicsGame
         return laskuri;
     }
 
-    IntMeter LuoZombiLaskuri(double x, double y)
-    {
-        IntMeter laskuri = new IntMeter(0);
-        Label naytto = new Label();
-        naytto.BindTo(laskuri);
-        naytto.X = x;
-        naytto.Y = y;
-        naytto.TextColor = Color.BrightGreen;
-        naytto.BorderColor = Level.BackgroundColor;
-        naytto.Color = Level.BackgroundColor;
-        Add(naytto);
-        return laskuri;
-    }
 
     /// <summary>
     /// Luodaan pelikenttä.
@@ -111,6 +101,10 @@ public class ZombiPeli : PhysicsGame
     public void LuoKentta()
     {
         LuoRakennus();
+
+        // Peelikentän ja ikkunan koko
+        Level.Size = new Vector(1920, 1080);
+        SetWindowSize(1920, 1080);
 
         // Asetetaan kentän rajat
         vasenReuna = Level.CreateLeftBorder();
@@ -164,7 +158,7 @@ public class ZombiPeli : PhysicsGame
     /// <param name="y">seinän y-koordinaatti</param>
     public void LuoSeinat(double leveys, double korkeus, double x, double y)
     {
-        PhysicsObject seina = PhysicsObject.CreateStaticObject(leveys, korkeus);
+        seina = PhysicsObject.CreateStaticObject(leveys, korkeus);
         seina.Color = Color.Gray;
         seina.Restitution = 0.0;
         seina.X = x;
@@ -190,7 +184,7 @@ public class ZombiPeli : PhysicsGame
         pelaaja.Y = y;
         pelaaja.Restitution = 0.0;
         Add(pelaaja);
-        AddCollisionHandler(pelaaja, "zombi", ZombiOsuuPelaajaan);
+        AddCollisionHandler<PhysicsObject, Zombi>(pelaaja, ZombiOsuuPelaajaan);
         return pelaaja;
     }
 
@@ -202,10 +196,7 @@ public class ZombiPeli : PhysicsGame
     /// </summary>
     public void LuoZombi()
     {
-
         zombi = LuoZombi(0.0, 0.0);
-
-        zombejaKentalla.Value += 1;
     }
 
     /// <summary>
@@ -214,23 +205,23 @@ public class ZombiPeli : PhysicsGame
     /// <param name="x">zombin x-koordinaatit</param>
     /// <param name="y">zombin y-koordinaatit</param>
     /// <returns></returns>
-    PhysicsObject LuoZombi(double x, double y)
+    Zombi LuoZombi(double x, double y)
     {
-        PhysicsObject zombi = new PhysicsObject(25.0, 25.0);
+        
+        Zombi zombi = new Zombi(25.0, 25.0, new Color[] { Color.Green, Color.Red });
         zombi.Shape = Shape.Circle;
-        zombi.Color = Color.Green;
         zombi.X = x;
         zombi.Y = y;
         zombi.Restitution = 0.0;
-        zombi.Tag = "zombi";
         Add(zombi);
         return zombi;
     }
 
-    public void ZombiOsuuPelaajaan(PhysicsObject pelaaja1, PhysicsObject kohde)
+    public void ZombiOsuuPelaajaan(PhysicsObject pelaaja1, Zombi kohde)
     {
         pelaaja1.Destroy();
         MessageDisplay.Add("Hävisit pelin!");
+        MessageDisplay.Add("Pisteesi: " + pelaajanPisteet);
     }
 
     #endregion
@@ -242,13 +233,12 @@ public class ZombiPeli : PhysicsGame
     /// </summary>
     /// <param name="ammus">ammus</param>
     /// <param name="kohde">zombi</param>
-    public void AmmusOsui(PhysicsObject ammus, PhysicsObject kohde)
+    public void AmmusOsui(PhysicsObject ammus, Zombi kohde)
     {
         if (kohde == zombi)
         {
             pelaajanPisteet.Value += 1;
-            //zombejaKentalla.Value -= 1;
-            zombi.Destroy();
+            kohde.OtaVastaanOsuma();
         }
         ammus.Destroy();
     }
@@ -264,6 +254,7 @@ public class ZombiPeli : PhysicsGame
         {
             ammus.Size *= 0.5;
             // ammus.Image = ...
+            AddCollisionHandler<PhysicsObject, Zombi>(ammus, AmmusOsui);
             ammus.MaximumLifetime = TimeSpan.FromSeconds(1.0);
         }
     }
