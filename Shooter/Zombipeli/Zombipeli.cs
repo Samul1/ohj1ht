@@ -176,7 +176,7 @@ public class ZombiPeli : PhysicsGame
     /// <returns></returns>
     PhysicsObject LuoPelaaja(double x, double y)
     {
-        PhysicsObject pelaaja = new PhysicsObject(25.0, 25.0);
+        PhysicsObject pelaaja =  PhysicsObject.CreateStaticObject(25.0, 25.0);
         pelaaja.Shape = Shape.Circle;
         pelaaja.Color = Color.DarkBlue;
         pelaaja.X = x;
@@ -232,9 +232,7 @@ public class ZombiPeli : PhysicsGame
     public void ZombiOsuuPelaajaan(PhysicsObject pelaaja, Zombi kohde)
     {
         pelaaja.Destroy();
-
-        MessageDisplay.Add("Hävisit pelin!");
-        MessageDisplay.Add("Pisteesi: " + pelaajanPisteet);
+        GameOver();
     }
 
     #endregion
@@ -352,4 +350,18 @@ public class ZombiPeli : PhysicsGame
 
 
     #endregion
+
+    public void GameOver()
+    {
+        Label peliLoppu = new Label(500.0, 500.0);
+        peliLoppu.X = 0.0;
+        peliLoppu.Y = 0.0;
+        peliLoppu.Text = "Hävisit pelin. \n \n" + "Onnistuit keräämään: " + pelaajanPisteet + " pistettä.\n \n Paina Esc-näppäintä lopettaaksesi.";
+        peliLoppu.Color = Level.BackgroundColor;
+        peliLoppu.TextColor = Color.Red;
+        peliLoppu.BorderColor = Color.Red;
+        Add(peliLoppu);
+        //MessageDisplay.Add("Hävisit pelin!");
+        //MessageDisplay.Add("Pisteesi: " + pelaajanPisteet);
+    }
 }
