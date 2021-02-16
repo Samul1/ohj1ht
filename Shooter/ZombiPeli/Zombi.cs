@@ -6,7 +6,7 @@ using System.Text;
 
 public class Zombi : PhysicsObject
 {
-    public int Osumat; // Muuta private, kun zombien tappaminen on korjattu!
+    private int Osumat;
     private Color[] Varit;
     public Zombi(double leveys, double korkeus, Color[] varit) : base(leveys, korkeus)
     {
