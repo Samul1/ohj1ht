@@ -45,6 +45,12 @@ public class ZombiPeli : PhysicsGame
         LuoKentta();
         AsetaOhjaimet();
         LisaaLaskurit();
+        ZombiAjastin();
+    }
+
+    public void ZombiAjastin()
+    {
+        Timer.CreateAndStart(1.5, LuoZombi);
     }
 
     #region Laskuri
@@ -73,7 +79,7 @@ public class ZombiPeli : PhysicsGame
 
     #endregion
 
-    #region Pelikentta
+    #region Pelikenttan ja pelaajan luonti.
 
     /// <summary>
     /// Luodaan pelikenttä.
@@ -156,7 +162,7 @@ public class ZombiPeli : PhysicsGame
 
     #endregion
 
-    #region Pelaaja
+    #region Pelaaja ja pelaajan ase
 
     /// <summary>
     /// Luo pelaaja olion
@@ -177,6 +183,8 @@ public class ZombiPeli : PhysicsGame
 
         pelaajanAse = new AssaultRifle(30, 10);
         //pelaajanAse.Ammo.Value = 100; // Ammusten määrä
+        pelaajanAse.InfiniteAmmo = true;
+        pelaajanAse.AttackSound = null; 
         pelaajanAse.CanHitOwner = false;
         pelaaja.Add(pelaajanAse);
 
@@ -216,13 +224,14 @@ public class ZombiPeli : PhysicsGame
     public void ZombiOsuuPelaajaan(PhysicsObject pelaaja1, Zombi kohde)
     {
         pelaaja1.Destroy();
+        
         MessageDisplay.Add("Hävisit pelin!");
         MessageDisplay.Add("Pisteesi: " + pelaajanPisteet);
     }
 
     #endregion
 
-    #region Ase
+    #region Aseen kayttaytyminen
 
     /// <summary>
     /// Hoidellaan ammuksen osuminen
@@ -249,7 +258,6 @@ public class ZombiPeli : PhysicsGame
         if (ammus != null)
         {
             ammus.Size *= 0.5;
-            // ammus.Image = ...
             AddCollisionHandler<PhysicsObject, Zombi>(ammus, AmmusOsui);
             ammus.MaximumLifetime = TimeSpan.FromSeconds(0.5);
         }
