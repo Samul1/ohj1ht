@@ -6,7 +6,7 @@ using System.Text;
 
 public class Zombi : PhysicsObject
 {
-    private int Osumat;
+    public int Osumat; // Muuta private, kun zombien tappaminen on korjattu!
     private Color[] Varit;
     public Zombi(double leveys, double korkeus, Color[] varit) : base(leveys, korkeus)
     {
@@ -29,6 +29,7 @@ public class Zombi : PhysicsObject
     public virtual void TuhoaZombi()
     {
         this.Destroy();
+        Osumat = 0;
     }
 
 }

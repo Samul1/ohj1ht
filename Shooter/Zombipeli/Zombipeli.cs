@@ -242,8 +242,12 @@ public class ZombiPeli : PhysicsGame
     {
         if (kohde == zombi)
         {
+            
             pelaajanPisteet.Value += 1;
             kohde.OtaVastaanOsuma();
+            // Katsoo, että koliseeko ammukset ja zombit keskenään ja näin ei käy...
+            // Poista edellä oleva rivi, kun zombien kuolemis ongelma on korjattu.
+            MessageDisplay.Add(kohde.Osumat.ToString());
         }
         ammus.Destroy();
     }
