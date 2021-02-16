@@ -9,12 +9,11 @@ using System.Collections.Generic;
 /// <summary>
 /// Ylhäältäpäin kuvattu zombie räiskintä peli.
 /// </summary>
+/// 
+// Ongelma: Jos kentällä on enemmän kuin yksi zombi niin edelliset zombit eivät voi tuhoutua.
 public class ZombiPeli : PhysicsGame
 {
     #region Atribuutit
-
-    // Luodaan aseen atribuutti.
-    AssaultRifle pelaajan1Ase;
 
     // Luodaan uudet Vectorit pelaajan liikuttamista varten.
     Vector nopeusYlos = new Vector(0, 200);
@@ -29,48 +28,26 @@ public class ZombiPeli : PhysicsGame
     PhysicsObject alaReuna;
 
     // Luodaan pelaaja attribuutti luokan sisällä
-    PhysicsObject pelaaja1;
-    //PhysicsObject pelaaja2;
+    PhysicsObject pelaaja;
+    // Luodaan aseen atribuutti.
+    AssaultRifle pelaajanAse;
 
     // Luodaan zombeille attribuutit
     Zombi zombi;
-    // Zombin HP
-    //int zombinHP;
-
-    // Luodaan ammuksen attribuutti
-    //PhysicsObject ammus;
-
-    PhysicsObject seina;
 
     // Pelaajan pisteet
     IntMeter pelaajanPisteet;
-
-    
-
 
     #endregion
 
     public override void Begin()
     {
         LuoKentta();
-        AloitaPeli();
         AsetaOhjaimet();
         LisaaLaskurit();
     }
 
-    public void AloitaPeli()
-    {
-        pelaaja1 = LuoPelaaja(-200.0, 0.0);
-        pelaajan1Ase = new AssaultRifle(30, 10);
-        //pelaajan1Ase.Ammo.Value = 100; // Ammusten määrä
-        //pelaajan1Ase.ProjectileCollision = AmmusOsui;
-        pelaajan1Ase.CanHitOwner = false;
-        pelaaja1.Add(pelaajan1Ase);
-
-        zombi = LuoZombi(0, 0);
-
-        // pelaaja2 = LuoPelaaja(200.0, 0.0);
-    }
+    #region Laskuri
 
     public void LisaaLaskurit()
     {
@@ -94,12 +71,19 @@ public class ZombiPeli : PhysicsGame
     }
 
 
+    #endregion
+
+    #region Pelikentta
+
     /// <summary>
     /// Luodaan pelikenttä.
     /// Rajat ja kamera asetukset.
     /// </summary>
     public void LuoKentta()
     {
+        pelaaja = LuoPelaaja(-200.0, 0.0);
+        zombi = LuoZombi(0, 0);
+
         LuoRakennus();
 
         // Peelikentän ja ikkunan koko
@@ -158,7 +142,7 @@ public class ZombiPeli : PhysicsGame
     /// <param name="y">seinän y-koordinaatti</param>
     public void LuoSeinat(double leveys, double korkeus, double x, double y)
     {
-        seina = PhysicsObject.CreateStaticObject(leveys, korkeus);
+        PhysicsObject seina = PhysicsObject.CreateStaticObject(leveys, korkeus);
         seina.Color = Color.Gray;
         seina.Restitution = 0.0;
         seina.X = x;
@@ -168,6 +152,11 @@ public class ZombiPeli : PhysicsGame
     }
 
     #endregion
+
+
+    #endregion
+
+    #region Pelaaja
 
     /// <summary>
     /// Luo pelaaja olion
@@ -185,8 +174,16 @@ public class ZombiPeli : PhysicsGame
         pelaaja.Restitution = 0.0;
         Add(pelaaja);
         AddCollisionHandler<PhysicsObject, Zombi>(pelaaja, ZombiOsuuPelaajaan);
+
+        pelaajanAse = new AssaultRifle(30, 10);
+        //pelaajanAse.Ammo.Value = 100; // Ammusten määrä
+        pelaajanAse.CanHitOwner = false;
+        pelaaja.Add(pelaajanAse);
+
         return pelaaja;
     }
+
+    #endregion
 
     #region Zombi
 
@@ -200,14 +197,13 @@ public class ZombiPeli : PhysicsGame
     }
 
     /// <summary>
-    /// Luo zombi-olion
+    /// Luo zombin
     /// </summary>
     /// <param name="x">zombin x-koordinaatit</param>
     /// <param name="y">zombin y-koordinaatit</param>
     /// <returns></returns>
     Zombi LuoZombi(double x, double y)
     {
-        
         Zombi zombi = new Zombi(25.0, 25.0, new Color[] { Color.Green, Color.Red });
         zombi.Shape = Shape.Circle;
         zombi.X = x;
@@ -255,7 +251,7 @@ public class ZombiPeli : PhysicsGame
             ammus.Size *= 0.5;
             // ammus.Image = ...
             AddCollisionHandler<PhysicsObject, Zombi>(ammus, AmmusOsui);
-            ammus.MaximumLifetime = TimeSpan.FromSeconds(1.0);
+            ammus.MaximumLifetime = TimeSpan.FromSeconds(0.5);
         }
     }
 
@@ -266,8 +262,8 @@ public class ZombiPeli : PhysicsGame
     /// <param name="hiirenliike">hiirenliike</param>
     public void Tahtaa(AnalogState hiirenliike)
     {
-        Vector suunta = (Mouse.PositionOnWorld - pelaajan1Ase.AbsolutePosition).Normalize();
-        pelaajan1Ase.Angle = suunta.Angle;
+        Vector suunta = (Mouse.PositionOnWorld - pelaajanAse.AbsolutePosition).Normalize();
+        pelaajanAse.Angle = suunta.Angle;
     }
 
     #endregion
@@ -279,17 +275,17 @@ public class ZombiPeli : PhysicsGame
     /// </summary>
     public void AsetaOhjaimet()
     {
-        Keyboard.Listen(Key.A, ButtonState.Down, AsetaNopeus, "Pelaaja 1: Liikuta hahmoa vasemmalle", pelaaja1, nopeusVasen);
-        Keyboard.Listen(Key.A, ButtonState.Released, AsetaNopeus, null, pelaaja1, Vector.Zero);
-        Keyboard.Listen(Key.D, ButtonState.Down, AsetaNopeus, "Pelaaja 1: Liikuta hahmoa oikealle", pelaaja1, nopeusOikea);
-        Keyboard.Listen(Key.D, ButtonState.Released, AsetaNopeus, null, pelaaja1, Vector.Zero);
-        Keyboard.Listen(Key.W, ButtonState.Down, AsetaNopeus, "Pelaaja 1: Liikuta hahmoa ylös", pelaaja1, nopeusYlos);
-        Keyboard.Listen(Key.W, ButtonState.Released, AsetaNopeus, null, pelaaja1, Vector.Zero);
-        Keyboard.Listen(Key.S, ButtonState.Down, AsetaNopeus, "Pelaaja 1: Liikuta hahmoa alas", pelaaja1, nopeusAlas);
-        Keyboard.Listen(Key.S, ButtonState.Released, AsetaNopeus, null, pelaaja1, Vector.Zero);
+        Keyboard.Listen(Key.A, ButtonState.Down, AsetaNopeus, "Pelaaja 1: Liikuta hahmoa vasemmalle", pelaaja, nopeusVasen);
+        Keyboard.Listen(Key.A, ButtonState.Released, AsetaNopeus, null, pelaaja, Vector.Zero);
+        Keyboard.Listen(Key.D, ButtonState.Down, AsetaNopeus, "Pelaaja 1: Liikuta hahmoa oikealle", pelaaja, nopeusOikea);
+        Keyboard.Listen(Key.D, ButtonState.Released, AsetaNopeus, null, pelaaja, Vector.Zero);
+        Keyboard.Listen(Key.W, ButtonState.Down, AsetaNopeus, "Pelaaja 1: Liikuta hahmoa ylös", pelaaja, nopeusYlos);
+        Keyboard.Listen(Key.W, ButtonState.Released, AsetaNopeus, null, pelaaja, Vector.Zero);
+        Keyboard.Listen(Key.S, ButtonState.Down, AsetaNopeus, "Pelaaja 1: Liikuta hahmoa alas", pelaaja, nopeusAlas);
+        Keyboard.Listen(Key.S, ButtonState.Released, AsetaNopeus, null, pelaaja, Vector.Zero);
 
         Mouse.ListenMovement(0.1, Tahtaa, "Pelaaja 1: Tähtää aseella");
-        Mouse.Listen(MouseButton.Left, ButtonState.Down, AmmuAseella, "Pelaaja1: Ammu aseella", pelaajan1Ase);
+        Mouse.Listen(MouseButton.Left, ButtonState.Down, AmmuAseella, "Pelaaja1: Ammu aseella", pelaajanAse);
 
         Keyboard.Listen(Key.Space, ButtonState.Pressed, LuoZombi, "Luo zombin kentälle"); // poistetaan pelistä, kun ei enää testauksessa.
 
@@ -328,9 +324,7 @@ public class ZombiPeli : PhysicsGame
         pelaaja.Velocity = nopeus;
 
     }
+
+
+    #endregion
 }
-
-#endregion
-
-
-
