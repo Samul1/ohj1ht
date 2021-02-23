@@ -48,19 +48,60 @@ public class ZombiPeli : PhysicsGame
     PathFollowerBrain polkuAivot4;
     FollowerBrain seuraajaAivot4;
 
-    // Pelaajan pisteet
+    // Laskurit
     IntMeter pelaajanPisteet;
     IntMeter zombiLaskuri;
+
+    // HighScore ikkuna
+    ScoreList topLista = new ScoreList(10, false, 0);
 
     #endregion
 
     public override void Begin()
+    {
+        topLista = DataStorage.TryLoad<ScoreList>(topLista, "pisteet.xml");
+        AloitusValikko();
+    }
+
+    #region Valikko
+
+    public void AloitusValikko()
+    {
+        
+        MultiSelectWindow alkuValikko = new MultiSelectWindow("Zombie Survival", "Aloita peli", "Parhaat pisteet", "Lopeta");
+        alkuValikko.AddItemHandler(0, AloitaPeli);
+        alkuValikko.AddItemHandler(1, ParhaatPisteet);
+        alkuValikko.AddItemHandler(2, Exit);
+        alkuValikko.DefaultCancel = 3;
+        Mouse.IsCursorVisible = true;
+        Add(alkuValikko);
+    }
+
+    /// <summary>
+    /// Aloittaa pelin.
+    /// </summary>
+    public void AloitaPeli()
     {
         LuoKentta();
         AsetaOhjaimet();
         LisaaLaskurit();
         ZombiAjastin();
     }
+
+    public void ParhaatPisteet()
+    {
+        HighScoreWindow topIkkuna = new HighScoreWindow ("Parhaat pisteet", topLista);
+        topIkkuna.Closed += TallennaPisteet;
+        Add(topIkkuna);
+    }
+
+    public void TallennaPisteet(Window lahettaja)
+    {
+        DataStorage.Save<ScoreList>(topLista, "pisteet.xml");
+        AloitusValikko();
+    }
+
+    #endregion
 
     #region Laskuri ja ajastin
 
@@ -571,27 +612,24 @@ public class ZombiPeli : PhysicsGame
 
     public void GameOver()
     {
+        ClearAll();
         if (pelaajaKuoli == true)
         {
-            Label peliLoppu = new Label(500.0, 500.0);
-            peliLoppu.X = 0.0;
-            peliLoppu.Y = 0.0;
-            peliLoppu.Text = "Hävisit pelin. \n \n" + "Onnistuit keräämään: " + pelaajanPisteet + " pistettä.\n \n Paina Esc-näppäintä lopettaaksesi.";
-            peliLoppu.Color = Level.BackgroundColor;
-            peliLoppu.TextColor = Color.Red;
-            peliLoppu.BorderColor = Color.Red;
-            Add(peliLoppu);
+            HighScoreWindow topIkkuna = new HighScoreWindow("Parhaat pisteet",
+                                                        "Hävisit pelin, onnistui keräämään %p pistettä! Syötä nimesi: ",
+                                                        topLista, pelaajanPisteet);
+            topIkkuna.Closed += TallennaPisteet;
+            Add(topIkkuna);
         }
         if (zombiLaskuri.Value == 0)
         {
-            Label peliLoppu = new Label(500.0, 500.0);
-            peliLoppu.X = 0.0;
-            peliLoppu.Y = 0.0;
-            peliLoppu.Text = "Voitit pelin. \n \n" + "Onnistuit keräämään: " + pelaajanPisteet + " pistettä.\n \n Paina Esc-näppäintä lopettaaksesi.";
-            peliLoppu.Color = Level.BackgroundColor;
-            peliLoppu.TextColor = Color.Red;
-            peliLoppu.BorderColor = Color.Red;
-            Add(peliLoppu);
+            HighScoreWindow topIkkuna = new HighScoreWindow("Parhaat pisteet",
+                                                        "Onneksi olkoon, Voitit pelin ja onnistui keräämään %p pistettä! Syötä nimesi: ",
+                                                        topLista, pelaajanPisteet);
+            topIkkuna.Closed += TallennaPisteet;
+            Add(topIkkuna);
         }
+        
+        
     }
 }
