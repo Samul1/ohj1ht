@@ -87,14 +87,10 @@ public class ZombiPeli : PhysicsGame
     /// </summary>
     public void ZombiAjastin()
     {
-        // 30 sekunnin ajan luodaan zombi kahden sekunnin välein.
+        // 60 sekunnin ajan luodaan zombi kahden sekunnin välein.
         Timer ajastin = new Timer();
         ajastin.Interval = 2.0;
         ajastin.Timeout += LuoZombi;
-        ajastin.Start(15);
-
-        // 30 sekunnin ajan luodaan zombi yhden sekunnin välein.
-        ajastin.Interval = 1.0;
         ajastin.Start(30);
     }
 
