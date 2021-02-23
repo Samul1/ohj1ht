@@ -10,7 +10,7 @@ using System.Collections.Generic;
 /// Ylhäältäpäin kuvattu zombie räiskintä peli.
 /// </summary>
 /// 
-//           Pelaaja hahmo lähtee pyörimään liikuttuaan seinässä kiinni.
+
 public class ZombiPeli : PhysicsGame
 {
     #region Atribuutit
@@ -231,7 +231,7 @@ public class ZombiPeli : PhysicsGame
         pelaaja.X = x;
         pelaaja.Y = y;
         pelaaja.Restitution = 0.0;
-        pelaaja.StopAngular(); // pysäyttää pelaajahahmon pyörimisen.
+        pelaaja.CanRotate = false;
         pelaaja.Tag = "pelaaja";
         //pelaaja.Image = LoadImage("pelaaja");
         Add(pelaaja, 1);
