@@ -12,5 +12,11 @@
         <PackageReference Include="Jypeli.Physics2d.Core" Version="1.5.*" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="Content\ShooterKentta.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
 

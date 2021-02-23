@@ -33,7 +33,18 @@ public class ZombiPeli : PhysicsGame
     AssaultRifle pelaajanAse;
 
     // Luodaan zombeille attribuutit
-    Zombi zombi;
+    Zombi zombi1;
+    Zombi zombi2;
+    Zombi zombi3;
+    Zombi zombi4;
+    PathFollowerBrain polkuAivot1;
+    PathFollowerBrain polkuAivot2;
+    PathFollowerBrain polkuAivot3;
+    PathFollowerBrain polkuAivot4;
+    FollowerBrain seuraajaAivot1;
+    FollowerBrain seuraajaAivot2;
+    FollowerBrain seuraajaAivot3;
+    FollowerBrain seuraajaAivot4;
 
     // Pelaajan pisteet
     IntMeter pelaajanPisteet;
@@ -76,10 +87,15 @@ public class ZombiPeli : PhysicsGame
     /// </summary>
     public void ZombiAjastin()
     {
+        // 30 sekunnin ajan luodaan zombi kahden sekunnin välein.
         Timer ajastin = new Timer();
-        ajastin.Interval = 1.5;
+        ajastin.Interval = 2.0;
         ajastin.Timeout += LuoZombi;
-        ajastin.Start();
+        ajastin.Start(15);
+
+        // 30 sekunnin ajan luodaan zombi yhden sekunnin välein.
+        ajastin.Interval = 1.0;
+        ajastin.Start(30);
     }
 
     #endregion
@@ -103,18 +119,22 @@ public class ZombiPeli : PhysicsGame
 
         // Asetetaan kentän rajat
         vasenReuna = Level.CreateLeftBorder();
+        vasenReuna.Tag = "reuna";
         vasenReuna.Restitution = 1.0;
         vasenReuna.IsVisible = false;
 
         oikeaReuna = Level.CreateRightBorder();
+        oikeaReuna.Tag = "reuna";
         oikeaReuna.Restitution = 1.0;
         oikeaReuna.IsVisible = false;
 
         alaReuna = Level.CreateBottomBorder();
+        alaReuna.Tag = "reuna";
         alaReuna.Restitution = 1.0;
         alaReuna.IsVisible = false;
 
         ylaReuna = Level.CreateTopBorder();
+        ylaReuna.Tag = "reuna";
         ylaReuna.Restitution = 1.0;
         ylaReuna.IsVisible = false;
 
@@ -127,39 +147,41 @@ public class ZombiPeli : PhysicsGame
     /// </summary>
     public void LuoRakennus()
     {
-        // Keskiosa
-        LuoSeinat(400.0, 10, 0, 100);
-        LuoSeinat(400.0, 10, 0, -100);
 
-        // Vasensiipi
-        LuoSeinat(200.0, 10, -300, 100);
-        LuoSeinat(10.0, 350.0, -405, -70);
-        LuoSeinat(10.0, 150.0, -205, -170);
-        LuoSeinat(190.0, 10.0, -305, -240);
-
-        // Oikeasiipi
-        LuoSeinat(200.0, 10, 300, -100);
-        LuoSeinat(10.0, 350, 405, 70);
-        LuoSeinat(10.0, 150.0, 205, 170);
-        LuoSeinat(190.0, 10.0, 305, 240);
+        TileMap kentta = TileMap.FromLevelAsset("ShooterKentta");
+        kentta.SetTileMethod('x', LuoSeinat);
+        kentta.SetTileMethod('v', LuoIkkunat);
+        kentta.SetTileMethod('l', LuoLattia);
+        kentta.Execute(20, 20);
     }
 
-    /// <summary>
-    /// Luo rakennuksen seinät
-    /// </summary>
-    /// <param name="leveys">Seinän leveys</param>
-    /// <param name="korkeus">Seinän korkeus</param>
-    /// <param name="x">seinän x-koordinaatti</param>
-    /// <param name="y">seinän y-koordinaatti</param>
-    public void LuoSeinat(double leveys, double korkeus, double x, double y)
+    public void LuoSeinat(Vector paikka, double leveys, double korkeus)
     {
-        PhysicsObject seina = PhysicsObject.CreateStaticObject(leveys, korkeus);
-        seina.Color = Color.Gray;
-        seina.Restitution = 0.0;
-        seina.X = x;
-        seina.Y = y;
+        PhysicsObject seina = new PhysicsObject(leveys, korkeus);
+        seina.Position = paikka;
+        //seina.Image = LoadImage("seina");
         seina.Tag = "seina";
+        seina.MakeStatic();
         Add(seina);
+    }
+
+    public void LuoIkkunat(Vector paikka, double leveys, double korkeus)
+    {
+        GameObject ikkuna = new GameObject(leveys, korkeus);
+        ikkuna.Position = paikka;
+        ikkuna.Color = Color.Aqua;
+        Add(ikkuna);
+    }
+
+    public void LuoLattia(Vector paikka, double leveys, double korkeus)
+    {
+        GameObject lattia = new GameObject(leveys, korkeus);
+        lattia.Position = paikka;
+        //lattia.Image = LoadImage("lattia");
+        lattia.Color = Level.BackgroundColor;
+        lattia.Tag = "lattia";
+
+        Add(lattia, 0);
     }
 
     #endregion
@@ -176,13 +198,16 @@ public class ZombiPeli : PhysicsGame
     /// <returns></returns>
     PhysicsObject LuoPelaaja(double x, double y)
     {
-        PhysicsObject pelaaja =  PhysicsObject.CreateStaticObject(25.0, 25.0);
+        PhysicsObject pelaaja = new PhysicsObject(25.0, 25.0);
         pelaaja.Shape = Shape.Circle;
         pelaaja.Color = Color.DarkBlue;
         pelaaja.X = x;
         pelaaja.Y = y;
         pelaaja.Restitution = 0.0;
-        Add(pelaaja);
+        pelaaja.StopAngular(); // pysäyttää pelaajahahmon pyörimisen.
+        pelaaja.Tag = "pelaaja";
+        //pelaaja.Image = LoadImage("pelaaja");
+        Add(pelaaja, 1);
         AddCollisionHandler<PhysicsObject, Zombi>(pelaaja, ZombiOsuuPelaajaan);
 
         pelaajanAse = new AssaultRifle(30, 10);
@@ -205,10 +230,55 @@ public class ZombiPeli : PhysicsGame
     /// </summary>
     public void LuoZombi()
     {
-        zombi = LuoZombi(0.0, Level.Bottom + 20); // alareuna spawni
-        zombi = LuoZombi(0.0, Level.Top - 20); // alareuna spawni
-        zombi = LuoZombi(Level.Left + 50, 0.0); // alareuna spawni
-        zombi = LuoZombi(Level.Right - 50, 0.0); // alareuna spawni
+        zombi1 = LuoZombi(0.0, Level.Bottom + 20); // alareuna spawni
+        polkuAivot1 = new PathFollowerBrain(50);
+        zombi1.Brain = seuraajaAivot1;
+        polkuAivot1.Path = ZombinReittiAla();
+
+        seuraajaAivot1 = new FollowerBrain(pelaaja);
+        seuraajaAivot1.Speed = 100;
+        seuraajaAivot1.DistanceFar = 400;
+        seuraajaAivot1.DistanceClose = 50;
+        seuraajaAivot1.FarBrain = polkuAivot1;
+        seuraajaAivot1.StopWhenTargetClose = false;
+        seuraajaAivot1.TargetClose += ZombiLahellaPelaajaa;
+
+        zombi2 = LuoZombi(0.0, Level.Top - 20); // yläreuna spawni
+        polkuAivot2 = new PathFollowerBrain(50);
+        zombi2.Brain = seuraajaAivot2;
+        polkuAivot2.Path = ZombinReittiYla();
+        seuraajaAivot2 = new FollowerBrain(pelaaja);
+        seuraajaAivot2.Speed = 100;
+        seuraajaAivot2.DistanceFar = 400;
+        seuraajaAivot2.DistanceClose = 50;
+        seuraajaAivot2.FarBrain = polkuAivot2;
+        seuraajaAivot2.StopWhenTargetClose = false;
+        seuraajaAivot2.TargetClose += ZombiLahellaPelaajaa;
+
+        zombi3 = LuoZombi(Level.Left + 50, 0.0); // vasenreuna spawni
+        polkuAivot3 = new PathFollowerBrain(50);
+        zombi3.Brain = seuraajaAivot3;
+        polkuAivot3.Path = ZombinReittiVasen();
+        seuraajaAivot3 = new FollowerBrain(pelaaja);
+        seuraajaAivot3.Speed = 100;
+        seuraajaAivot3.DistanceFar = 400;
+        seuraajaAivot3.DistanceClose = 50;
+        seuraajaAivot3.FarBrain = polkuAivot3;
+        seuraajaAivot3.StopWhenTargetClose = false;
+        seuraajaAivot3.TargetClose += ZombiLahellaPelaajaa;
+
+        zombi4 = LuoZombi(Level.Right - 50, 0.0); // oikeareuna spawni
+        polkuAivot4 = new PathFollowerBrain(50);
+        zombi4.Brain = seuraajaAivot4;
+        polkuAivot4.Path = ZombinReittiOikea();
+        seuraajaAivot4 = new FollowerBrain(pelaaja);
+        seuraajaAivot2.Speed = 100;
+        seuraajaAivot4.DistanceFar = 400;
+        seuraajaAivot4.DistanceClose = 50;
+        seuraajaAivot4.FarBrain = polkuAivot4;
+        seuraajaAivot4.StopWhenTargetClose = false;
+        seuraajaAivot4.TargetClose += ZombiLahellaPelaajaa;
+
     }
 
     /// <summary>
@@ -225,7 +295,9 @@ public class ZombiPeli : PhysicsGame
         zombi.Y = y;
         zombi.Restitution = 0.0;
         zombi.Tag = "zombi";
-        Add(zombi);
+        //zombi.Image = LoadImage("zombi");
+        Add(zombi, 1);
+
         return zombi;
     }
 
@@ -233,6 +305,43 @@ public class ZombiPeli : PhysicsGame
     {
         pelaaja.Destroy();
         GameOver();
+    }
+
+    public List<Vector> ZombinReittiOikea()
+    {
+        List<Vector> polku = new List<Vector>();
+        polku.Add(new Vector(Level.Right -450, 20.0));
+
+        return polku;
+    }
+    public List<Vector> ZombinReittiVasen()
+    {
+        List<Vector> polku = new List<Vector>();
+        polku.Add(new Vector(Level.Left + 700.0, 20.0));
+
+        return polku;
+    }
+    public List<Vector> ZombinReittiYla()
+    {
+        List<Vector> polku = new List<Vector>();
+        polku.Add(new Vector(-185, Level.Top - 350));
+        polku.Add(new Vector(-185, Level.Top - 550));
+        return polku;
+    }
+    public List<Vector> ZombinReittiAla()
+    {
+        List<Vector> polku = new List<Vector>();
+        polku.Add(new Vector(-50, Level.Bottom + 350));
+        polku.Add(new Vector(-150, Level.Bottom + 360));
+
+
+
+        return polku;
+    }
+
+    public void ZombiLahellaPelaajaa()
+    {
+        //PlaySound("ZombiAani01");
     }
 
     #endregion
@@ -246,7 +355,7 @@ public class ZombiPeli : PhysicsGame
     /// <param name="kohde">zombi</param>
     public void AmmusOsuiZombiin(PhysicsObject ammus, Zombi kohde)
     {
-        if (kohde.Tag.ToString() == "zombi")
+        if (kohde.Tag.ToString() == "zombi" )
         {
             pelaajanPisteet.Value += 1;
             kohde.OtaVastaanOsuma();
@@ -255,12 +364,16 @@ public class ZombiPeli : PhysicsGame
     }
 
     /// <summary>
-    /// Hoidellaan ammuksen osuminen seinään.
+    /// Hoidellaan ammuksen osuminen seinään tai kentän reunoihin.
     /// </summary>
     /// <param name="ammus">fysiikka objecti ammus</param>
     /// <param name="seina">fysiikka objecti seina</param>
     public void AmmusOsuiSeinaan(PhysicsObject ammus, PhysicsObject seina)
     {
+        if (seina.Tag.ToString() == "reuna") 
+        {
+            ammus.Destroy();
+        }
         ammus.Destroy();
     }
 
@@ -276,6 +389,7 @@ public class ZombiPeli : PhysicsGame
             ammus.Size *= 0.5;
             AddCollisionHandler<PhysicsObject, Zombi>(ammus, "zombi" , AmmusOsuiZombiin);
             AddCollisionHandler(ammus, "seina", AmmusOsuiSeinaan);
+            AddCollisionHandler(ammus, "reuna", AmmusOsuiSeinaan);
             ammus.MaximumLifetime = TimeSpan.FromSeconds(1.0);
         }
     }
@@ -287,8 +401,8 @@ public class ZombiPeli : PhysicsGame
     /// <param name="hiirenliike">hiirenliike</param>
     public void Tahtaa(AnalogState hiirenliike)
     {
-        Vector suunta = (Mouse.PositionOnWorld - pelaajanAse.AbsolutePosition).Normalize();
-        pelaajanAse.Angle = suunta.Angle;
+        Vector suunta = (Mouse.PositionOnWorld - pelaaja.AbsolutePosition).Normalize();
+        pelaaja.Angle = suunta.Angle;
     }
 
     #endregion
