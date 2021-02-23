@@ -5,7 +5,7 @@ using Jypeli.Widgets;
 using System;
 using System.Collections.Generic;
 /// @author Samuli Juutinen
-/// @version 16.02.2021
+/// @version 23.02.2021
 /// <summary>
 /// Ylhäältäpäin kuvattu zombie räiskintä peli.
 /// </summary>
