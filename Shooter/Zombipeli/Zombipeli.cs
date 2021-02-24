@@ -49,6 +49,9 @@ public class ZombiPeli : PhysicsGame
    
     #endregion
     
+    /// <summary>
+    /// Pelin suoritus alkaa tästä.
+    /// </summary>
     public override void Begin()
     {
         SetWindowSize(618, 720);
@@ -112,6 +115,9 @@ public class ZombiPeli : PhysicsGame
 
     #region Laskuri ja ajastin
 
+    /// <summary>
+    /// Laittaa laskurit näytölle.
+    /// </summary>
     public void LisaaLaskurit()
     {
         pelaajanPisteet = LuoPisteLaskuri(Screen.Left + 100.0, Screen.Top - 100.0);
@@ -125,6 +131,12 @@ public class ZombiPeli : PhysicsGame
         Add(zombiLaskuriTeksti);
     }
 
+    /// <summary>
+    /// Pelaajan pistelaskuri.
+    /// </summary>
+    /// <param name="x">X-koordinaatti.</param>
+    /// <param name="y">Y-koordinaatti.</param>
+    /// <returns>laskuri</returns>
     IntMeter LuoPisteLaskuri(double x, double y)
     {
         IntMeter laskuri = new IntMeter(0);
@@ -141,6 +153,13 @@ public class ZombiPeli : PhysicsGame
         return laskuri;
     }
 
+    /// <summary>
+    /// Zombi laskuri.
+    /// Näyttää montako zombia on maailmassa.
+    /// </summary>
+    /// <param name="x">x-koordinaatti.</param>
+    /// <param name="y">Y-koordinaatti.</param>
+    /// <returns>laskuri</returns>
     IntMeter LuoZombiLaskuri(double x, double y)
     {
         IntMeter laskuri = new IntMeter(0);
@@ -187,9 +206,8 @@ public class ZombiPeli : PhysicsGame
         Level.Size = new Vector(1920, 1080);
         SetWindowSize(1920, 1080);
         Level.Background.Image = LoadImage("maasto");
-        Camera.ZoomToLevel(); // zoomataan koko kentän alueelle.
-        //Camera.Zoom(3.0);
-        //Camera.Follow(pelaaja);
+        Camera.Zoom(3.0);
+        Camera.Follow(pelaaja);
 
         // Asetetaan kentän rajat
         vasenReuna = Level.CreateLeftBorder();
@@ -371,7 +389,6 @@ public class ZombiPeli : PhysicsGame
         seuraajaAivo.DistanceClose = 50;
         seuraajaAivo.FarBrain = polkuAivo;
         seuraajaAivo.StopWhenTargetClose = false;
-        seuraajaAivo.TargetClose += ZombiLahellaPelaajaa;
         zombi.Brain = seuraajaAivo;
         return zombi;
     }
@@ -386,11 +403,6 @@ public class ZombiPeli : PhysicsGame
         pelaaja.Destroy();
         pelaajaKuoli = true;
         GameOver();
-    }
-
-    public void ZombiLahellaPelaajaa()
-    {
-        //PlaySound("ZombiAani01");
     }
 
     #endregion
@@ -532,11 +544,14 @@ public class ZombiPeli : PhysicsGame
 
     }
 
-
     #endregion
 
     /// <summary>
     /// Pelin lopetus näyttö.
+    /// Tyhjentää pelikentän.
+    /// Tallentaa pelaajan nimen ja highscoren
+    /// jos hän pääsee TOP 10 listalle.
+    /// Palauttaa sen jälkeen takaisin päävalikkoon.
     /// </summary>
     public void GameOver()
     {
@@ -557,7 +572,5 @@ public class ZombiPeli : PhysicsGame
             topIkkuna.Closed += TallennaPisteet;
             Add(topIkkuna);
         }
-        
-        
     }
 }
