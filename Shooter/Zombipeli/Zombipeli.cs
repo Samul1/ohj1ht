@@ -16,51 +16,39 @@ public class ZombiPeli : PhysicsGame
     #region Atribuutit
 
     // Luodaan uudet Vectorit pelaajan liikuttamista varten.
-    Vector nopeusYlos = new Vector(0, 200);
-    Vector nopeusAlas = new Vector(0, -200);
-    Vector nopeusVasen = new Vector(-200, 0);
-    Vector nopeusOikea = new Vector(200, 0);
-
+    private Vector nopeusYlos = new Vector(0, 200);
+    private Vector nopeusAlas = new Vector(0, -200);
+    private Vector nopeusVasen = new Vector(-200, 0);
+    private Vector nopeusOikea = new Vector(200, 0);
+    
     // Kentän rajat
-    PhysicsObject vasenReuna;
-    PhysicsObject oikeaReuna;
-    PhysicsObject ylaReuna;
-    PhysicsObject alaReuna;
-
+    private PhysicsObject vasenReuna;
+    private PhysicsObject oikeaReuna;
+    private PhysicsObject ylaReuna;
+    private PhysicsObject alaReuna;
+    
     // Luodaan pelaaja attribuutti luokan sisällä
-    PhysicsObject pelaaja;
+    private PhysicsObject pelaaja;
     // Luodaan aseen atribuutti.
-    AssaultRifle pelaajanAse;
+    private AssaultRifle pelaajanAse;
     // Tarkastetaan onko pelaaja hengissä
-    bool pelaajaKuoli = false;
-
-    // Luodaan zombeille attribuutit
-    Zombi zombi1;
-    Zombi zombi2;
-    Zombi zombi3;
-    Zombi zombi4;
-    PathFollowerBrain polkuAivot1;
-    FollowerBrain seuraajaAivot1;
-    PathFollowerBrain polkuAivot2;
-    FollowerBrain seuraajaAivot2;
-    PathFollowerBrain polkuAivot3;
-    FollowerBrain seuraajaAivot3;
-    PathFollowerBrain polkuAivot4;
-    FollowerBrain seuraajaAivot4;
-
+    private bool pelaajaKuoli = false;
+    
+    private bool pelaajaKatsooVasemmalle = false;
+     
     // Laskurit
-    IntMeter pelaajanPisteet;
-    IntMeter zombiLaskuri;
-
-    // HighScore ikkuna
-    ScoreList topLista = new ScoreList(10, false, 0);
-
+    private IntMeter pelaajanPisteet;
+    private IntMeter zombiLaskuri;
+    
+     // HighScore ikkuna
+    private ScoreList topLista = new ScoreList(10, false, 0);
+   
     // Rakennuksen palikoiden koko
-    const double RUUDUN_LEVEYS = 25;
-    const double RUUDUN_KORKEUS = 25;
-
+    private const double RUUDUN_LEVEYS = 25;
+    private const double RUUDUN_KORKEUS = 25;
+   
     #endregion
-
+    
     public override void Begin()
     {
         SetWindowSize(618, 720);
@@ -199,9 +187,9 @@ public class ZombiPeli : PhysicsGame
         Level.Size = new Vector(1920, 1080);
         SetWindowSize(1920, 1080);
         Level.Background.Image = LoadImage("maasto");
-        //Camera.ZoomToLevel(); // zoomataan koko kentän alueelle.
-        Camera.Zoom(3.0);
-        Camera.Follow(pelaaja);
+        Camera.ZoomToLevel(); // zoomataan koko kentän alueelle.
+        //Camera.Zoom(3.0);
+        //Camera.Follow(pelaaja);
 
         // Asetetaan kentän rajat
         vasenReuna = Level.CreateLeftBorder();
@@ -312,6 +300,7 @@ public class ZombiPeli : PhysicsGame
         pelaaja.Tag = "pelaaja";
         pelaaja.Image = LoadImage("survivor");
         Add(pelaaja, 1);
+        pelaaja.MirrorImage();
         AddCollisionHandler<PhysicsObject, Zombi>(pelaaja, ZombiOsuuPelaajaan);
 
         pelaajanAse = new AssaultRifle(30, 10);
@@ -334,17 +323,23 @@ public class ZombiPeli : PhysicsGame
     /// </summary>
     public void LuoZombi()
     {
-        zombi1 = LuoZombi(RandomGen.NextDouble(-200, 200), Level.Bottom + 20); // alareuna spawni
-        Zombi1PerusAivot();
+        List<Vector> polkuAla = new List<Vector>();
+        polkuAla.Add(new Vector(-185, Level.Top - 350));
+        polkuAla.Add(new Vector(-185, Level.Top - 550));
+        LuoZombi(RandomGen.NextDouble(-200, 200), Level.Bottom + 20, polkuAla); // alareuna spawni
 
-        zombi2 = LuoZombi(RandomGen.NextDouble(-200, 200), Level.Top - 20); // yläreuna spawni
-        Zombi2PerusAivot();
+        List<Vector> polkuYla = new List<Vector>();
+        polkuYla.Add(new Vector(-185, Level.Top - 350));
+        polkuYla.Add(new Vector(-185, Level.Top - 550));
+        LuoZombi(RandomGen.NextDouble(-200, 200), Level.Top - 20, polkuYla); // yläreuna spawni
 
-        zombi3 = LuoZombi(Level.Left + 50, RandomGen.NextDouble(-200, 200)); // vasenreuna spawni
-        Zombi3PerusAivot();
+        List<Vector> polkuVasen = new List<Vector>();
+        polkuVasen.Add(new Vector(Level.Left + 700.0, 20.0));
+        LuoZombi(Level.Left + 50, RandomGen.NextDouble(-200, 200), polkuVasen); // vasenreuna spawni
 
-        zombi4 = LuoZombi(Level.Right - 50, RandomGen.NextDouble(-200, 200)); // oikeareuna spawni
-        Zombi4PerusAivot();
+        List<Vector> polkuOikea = new List<Vector>();
+        polkuOikea.Add(new Vector(Level.Right - 450, 20.0));
+        LuoZombi(Level.Right - 50, RandomGen.NextDouble(-200, 200), polkuOikea); // oikeareuna spawni
 
 
     }
@@ -355,7 +350,7 @@ public class ZombiPeli : PhysicsGame
     /// <param name="x">zombin x-koordinaatit</param>
     /// <param name="y">zombin y-koordinaatit</param>
     /// <returns></returns>
-    Zombi LuoZombi(double x, double y)
+    Zombi LuoZombi(double x, double y, List<Vector> polku)
     {
         Zombi zombi = new Zombi(25.0, 25.0, new Color[] { Color.Green, Color.Red });
         zombi.Shape = Shape.Circle;
@@ -368,6 +363,16 @@ public class ZombiPeli : PhysicsGame
         zombiLaskuri.Value += 1;
         Add(zombi, 1);
 
+        PathFollowerBrain polkuAivo = new PathFollowerBrain(50);
+        polkuAivo.Path = polku;
+        FollowerBrain seuraajaAivo = new FollowerBrain(pelaaja);
+        seuraajaAivo.Speed = 100;
+        seuraajaAivo.DistanceFar = 400;
+        seuraajaAivo.DistanceClose = 50;
+        seuraajaAivo.FarBrain = polkuAivo;
+        seuraajaAivo.StopWhenTargetClose = false;
+        seuraajaAivo.TargetClose += ZombiLahellaPelaajaa;
+        zombi.Brain = seuraajaAivo;
         return zombi;
     }
 
@@ -381,140 +386,6 @@ public class ZombiPeli : PhysicsGame
         pelaaja.Destroy();
         pelaajaKuoli = true;
         GameOver();
-    }
-
-    /// <summary>
-    /// Oikealle spawnaavien sombien perusreitti.
-    /// </summary>
-    /// <returns>polku</returns>
-    public List<Vector> ZombinReittiOikea()
-    {
-        List<Vector> polku = new List<Vector>();
-        polku.Add(new Vector(Level.Right - 450, 20.0));
-
-        return polku;
-    }
-
-    /// <summary>
-    /// Vasemmalle spawnaavien zombien perusreitti.
-    /// </summary>
-    /// <returns>polku</returns>
-    public List<Vector> ZombinReittiVasen()
-    {
-        List<Vector> polku = new List<Vector>();
-        polku.Add(new Vector(Level.Left + 700.0, 20.0));
-
-        return polku;
-    }
-
-    /// <summary>
-    /// Ylhäälle spawnaavien zombien perusreitti.
-    /// </summary>
-    /// <returns>polku</returns>
-    public List<Vector> ZombinReittiYla()
-    {
-        List<Vector> polku = new List<Vector>();
-        polku.Add(new Vector(-185, Level.Top - 350));
-        polku.Add(new Vector(-185, Level.Top - 550));
-        return polku;
-    }
-
-    /// <summary>
-    /// Alhaalle spawnaavien zombien perusreitti.
-    /// </summary>
-    /// <returns>polku</returns>
-    public List<Vector> ZombinReittiAla()
-    {
-        List<Vector> polku = new List<Vector>();
-        polku.Add(new Vector(-50, Level.Bottom + 350));
-        polku.Add(new Vector(-150, Level.Bottom + 360));
-
-
-
-        return polku;
-    }
-
-    /// <summary>
-    /// Zombi1:n aivot.
-    /// Liikkuu kentän alareunasta talon sisälle
-    /// ja lähtee jahtaamaan pelaajaa, pelaajan 
-    /// tullessa tarpeeksi lähelle
-    /// </summary>
-    public void Zombi1PerusAivot()
-    {
-        polkuAivot1 = new PathFollowerBrain(50);
-        zombi1.Brain = seuraajaAivot1;
-        polkuAivot1.Path = ZombinReittiAla();
-        seuraajaAivot1 = new FollowerBrain(pelaaja);
-        seuraajaAivot1.Speed = 100;
-        seuraajaAivot1.DistanceFar = 400;
-        seuraajaAivot1.DistanceClose = 50;
-        seuraajaAivot1.FarBrain = polkuAivot1;
-        seuraajaAivot1.StopWhenTargetClose = false;
-        seuraajaAivot1.TargetClose += ZombiLahellaPelaajaa;
-    }
-
-    /// <summary>
-    /// Zombi2:n aivot.
-    /// Liikkuu kentän alareunasta talon sisälle
-    /// ja lähtee jahtaamaan pelaajaa, pelaajan 
-    /// tullessa tarpeeksi lähelle
-    /// </summary>
-    public void Zombi2PerusAivot()
-    {
-        zombi2 = LuoZombi(0.0, Level.Top - 20); // yläreuna spawni
-        polkuAivot2 = new PathFollowerBrain(50);
-        zombi2.Brain = seuraajaAivot2;
-        polkuAivot2.Path = ZombinReittiYla();
-        seuraajaAivot2 = new FollowerBrain(pelaaja);
-        seuraajaAivot2.Speed = 100;
-        seuraajaAivot2.DistanceFar = 400;
-        seuraajaAivot2.DistanceClose = 50;
-        seuraajaAivot2.FarBrain = polkuAivot2;
-        seuraajaAivot2.StopWhenTargetClose = false;
-        seuraajaAivot2.TargetClose += ZombiLahellaPelaajaa;
-    }
-
-    /// <summary>
-    /// Zombi3:n aivot.
-    /// Liikkuu kentän alareunasta talon sisälle
-    /// ja lähtee jahtaamaan pelaajaa, pelaajan 
-    /// tullessa tarpeeksi lähelle
-    /// </summary>
-    public void Zombi3PerusAivot()
-    {
-        zombi3 = LuoZombi(Level.Left + 50, 0.0); // vasenreuna spawni
-        polkuAivot3 = new PathFollowerBrain(50);
-        zombi3.Brain = seuraajaAivot3;
-        polkuAivot3.Path = ZombinReittiVasen();
-        seuraajaAivot3 = new FollowerBrain(pelaaja);
-        seuraajaAivot3.Speed = 100;
-        seuraajaAivot3.DistanceFar = 400;
-        seuraajaAivot3.DistanceClose = 50;
-        seuraajaAivot3.FarBrain = polkuAivot3;
-        seuraajaAivot3.StopWhenTargetClose = false;
-        seuraajaAivot3.TargetClose += ZombiLahellaPelaajaa;
-    }
-
-    /// <summary>
-    /// Zombi4:n aivot.
-    /// Liikkuu kentän alareunasta talon sisälle
-    /// ja lähtee jahtaamaan pelaajaa, pelaajan 
-    /// tullessa tarpeeksi lähelle
-    /// </summary>
-    public void Zombi4PerusAivot()
-    {
-        zombi4 = LuoZombi(Level.Right - 50, 0.0); // oikeareuna spawni
-        polkuAivot4 = new PathFollowerBrain(50);
-        zombi4.Brain = seuraajaAivot4;
-        polkuAivot4.Path = ZombinReittiOikea();
-        seuraajaAivot4 = new FollowerBrain(pelaaja);
-        seuraajaAivot2.Speed = 100;
-        seuraajaAivot4.DistanceFar = 400;
-        seuraajaAivot4.DistanceClose = 50;
-        seuraajaAivot4.FarBrain = polkuAivot4;
-        seuraajaAivot4.StopWhenTargetClose = false;
-        seuraajaAivot4.TargetClose += ZombiLahellaPelaajaa;
     }
 
     public void ZombiLahellaPelaajaa()
@@ -584,8 +455,24 @@ public class ZombiPeli : PhysicsGame
     /// <param name="hiirenliike">hiirenliike</param>
     public void Tahtaa(AnalogState hiirenliike)
     {
-        Vector suunta = (Mouse.PositionOnWorld - pelaaja.AbsolutePosition).Normalize();
-        pelaaja.Angle = suunta.Angle;
+        //MessageDisplay.Add(Mouse.PositionOnWorld.X + "");
+        if(pelaajaKatsooVasemmalle == false && Mouse.PositionOnScreen.X < 0)
+        {
+            pelaaja.MirrorImage();
+            pelaajanAse.FlipImage();
+            pelaajanAse.X = -10;
+            pelaajaKatsooVasemmalle = true;
+        }
+        else if(pelaajaKatsooVasemmalle == true && Mouse.PositionOnScreen.X > 0)
+        {
+            pelaaja.MirrorImage();
+            pelaajanAse.FlipImage();
+            pelaajanAse.X = 10;
+            pelaajaKatsooVasemmalle = false;
+        }
+        
+        Vector suunta = (Mouse.PositionOnWorld - pelaajanAse.AbsolutePosition).Normalize();
+        pelaajanAse.Angle = suunta.Angle;
     }
 
     #endregion
