@@ -53,10 +53,7 @@ public class ZombiPeli : PhysicsGame
     /// Pelin suoritus alkaa tästä.
     /// </summary>
     public override void Begin()
-    {
-        SetWindowSize(618, 720);
-        Level.Background.Image = LoadImage("ZombiKuva");
-        
+    { 
         topLista = DataStorage.TryLoad<ScoreList>(topLista, "pisteet.xml");
         AloitusValikko();
     }
@@ -67,7 +64,9 @@ public class ZombiPeli : PhysicsGame
     /// Pelin aloitusvalikko.
     /// </summary>
     public void AloitusValikko()
-    { 
+    {
+        SetWindowSize(618, 720);
+        Level.Background.Image = LoadImage("ZombiKuva");
         MultiSelectWindow alkuValikko = new MultiSelectWindow("Zombie Survival", "Aloita peli", "Parhaat pisteet", "Lopeta");
         alkuValikko.AddItemHandler(0, AloitaPeli);
         alkuValikko.AddItemHandler(1, ParhaatPisteet);
@@ -556,6 +555,8 @@ public class ZombiPeli : PhysicsGame
     public void GameOver()
     {
         ClearAll();
+        SetWindowSize(618, 720);
+        Level.Background.Image = LoadImage("ZombiKuva");
         if (pelaajaKuoli == true)
         {
             HighScoreWindow topIkkuna = new HighScoreWindow("Parhaat pisteet",
