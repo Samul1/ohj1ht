@@ -319,6 +319,7 @@ public class ZombiPeli : PhysicsGame
         pelaajanAse.InfiniteAmmo = true;
         pelaajanAse.AttackSound = null;
         pelaajanAse.CanHitOwner = false;
+        pelaajanAse.X = 5;
         pelaaja.Add(pelaajanAse);
 
         return pelaaja;
@@ -583,8 +584,8 @@ public class ZombiPeli : PhysicsGame
     /// <param name="hiirenliike">hiirenliike</param>
     public void Tahtaa(AnalogState hiirenliike)
     {
-        Vector suunta = (Mouse.PositionOnWorld - pelaajanAse.AbsolutePosition).Normalize();
-        pelaajanAse.Angle = suunta.Angle;
+        Vector suunta = (Mouse.PositionOnWorld - pelaaja.AbsolutePosition).Normalize();
+        pelaaja.Angle = suunta.Angle;
     }
 
     #endregion
