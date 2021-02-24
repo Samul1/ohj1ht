@@ -55,24 +55,34 @@ public class ZombiPeli : PhysicsGame
     // HighScore ikkuna
     ScoreList topLista = new ScoreList(10, false, 0);
 
+    // Rakennuksen palikoiden koko
+    const double RUUDUN_LEVEYS = 25;
+    const double RUUDUN_KORKEUS = 25;
+
     #endregion
 
     public override void Begin()
     {
+        SetWindowSize(618, 720);
+        Level.Background.Image = LoadImage("ZombiKuva");
+        
         topLista = DataStorage.TryLoad<ScoreList>(topLista, "pisteet.xml");
         AloitusValikko();
     }
 
     #region Valikko
 
+    /// <summary>
+    /// Pelin aloitusvalikko.
+    /// </summary>
     public void AloitusValikko()
-    {
-        
+    { 
         MultiSelectWindow alkuValikko = new MultiSelectWindow("Zombie Survival", "Aloita peli", "Parhaat pisteet", "Lopeta");
         alkuValikko.AddItemHandler(0, AloitaPeli);
         alkuValikko.AddItemHandler(1, ParhaatPisteet);
         alkuValikko.AddItemHandler(2, Exit);
-        alkuValikko.DefaultCancel = 3;
+        alkuValikko.DefaultCancel = 2;
+        alkuValikko.Color = Color.Green;
         Mouse.IsCursorVisible = true;
         Add(alkuValikko);
     }
@@ -88,6 +98,10 @@ public class ZombiPeli : PhysicsGame
         ZombiAjastin();
     }
 
+    /// <summary>
+    /// Parhaat pisteet ikkuna.
+    /// Tuo Parhaat pisteet tiedostosta tallennetut pisteet.
+    /// </summary>
     public void ParhaatPisteet()
     {
         HighScoreWindow topIkkuna = new HighScoreWindow ("Parhaat pisteet", topLista);
@@ -95,6 +109,11 @@ public class ZombiPeli : PhysicsGame
         Add(topIkkuna);
     }
 
+    /// <summary>
+    /// Aliohjelma tallentaa parhaat pisteet
+    /// pisteet.xml tiedostoon.
+    /// </summary>
+    /// <param name="lahettaja">lahettaja</param>
     public void TallennaPisteet(Window lahettaja)
     {
         DataStorage.Save<ScoreList>(topLista, "pisteet.xml");
@@ -109,7 +128,13 @@ public class ZombiPeli : PhysicsGame
     {
         pelaajanPisteet = LuoPisteLaskuri(Screen.Left + 100.0, Screen.Top - 100.0);
         zombiLaskuri = LuoZombiLaskuri(Screen.Right - 100.0, Screen.Top - 100.0);
-        
+        Label zombiLaskuriTeksti = new Label("Zombeja jäljellä:");
+        zombiLaskuriTeksti.X = Screen.Right - 220;
+        zombiLaskuriTeksti.Y = Screen.Top - 100;
+        zombiLaskuriTeksti.Color = Color.Black;
+        zombiLaskuriTeksti.TextColor = Color.Green;
+        zombiLaskuriTeksti.BorderColor = Color.Black;
+        Add(zombiLaskuriTeksti);
     }
 
     IntMeter LuoPisteLaskuri(double x, double y)
@@ -121,8 +146,8 @@ public class ZombiPeli : PhysicsGame
         naytto.X = x;
         naytto.Y = y;
         naytto.TextColor = Color.BloodRed;
-        naytto.BorderColor = Level.BackgroundColor;
-        naytto.Color = Level.BackgroundColor;
+        naytto.BorderColor = Color.Black;
+        naytto.Color = Color.Black;
         Add(naytto);
 
         return laskuri;
@@ -137,17 +162,9 @@ public class ZombiPeli : PhysicsGame
         naytto.X = x;
         naytto.Y = y;
         naytto.TextColor = Color.Green;
-        naytto.BorderColor = Level.BackgroundColor;
-        naytto.Color = Level.BackgroundColor;
+        naytto.BorderColor = Color.Black;
+        naytto.Color = Color.Black;
         Add(naytto);
-
-        Label teksti = new Label("Zombeja jäljellä:");
-        teksti.X = Screen.Right + 80;
-        teksti.Y = Screen.Top - 70.0;
-        teksti.Color = Level.BackgroundColor;
-        teksti.TextColor = Color.Green;
-        teksti.BorderColor = Level.BackgroundColor;
-        Add(teksti);
 
         return laskuri;
     }
@@ -175,13 +192,16 @@ public class ZombiPeli : PhysicsGame
     /// </summary>
     public void LuoKentta()
     {
-        pelaaja = LuoPelaaja(-200.0, 0.0);
-
         LuoRakennus();
 
+        pelaaja = LuoPelaaja(-200.0, 0.0);
         // Peelikentän ja ikkunan koko
         Level.Size = new Vector(1920, 1080);
         SetWindowSize(1920, 1080);
+        Level.Background.Image = LoadImage("maasto");
+        //Camera.ZoomToLevel(); // zoomataan koko kentän alueelle.
+        Camera.Zoom(3.0);
+        Camera.Follow(pelaaja);
 
         // Asetetaan kentän rajat
         vasenReuna = Level.CreateLeftBorder();
@@ -204,8 +224,7 @@ public class ZombiPeli : PhysicsGame
         ylaReuna.Restitution = 1.0;
         ylaReuna.IsVisible = false;
 
-        Level.BackgroundColor = Color.Black;
-        Camera.ZoomToLevel(); // zoomataan koko kentän alueelle.
+        
     }
     #region Rakennus
     /// <summary>
@@ -215,23 +234,36 @@ public class ZombiPeli : PhysicsGame
     {
 
         TileMap kentta = TileMap.FromLevelAsset("ShooterKentta");
-        kentta.SetTileMethod('x', LuoSeinat);
+        kentta.SetTileMethod('x', LuoSeinat, "Seina");
         kentta.SetTileMethod('v', LuoIkkunat);
-        kentta.SetTileMethod('l', LuoLattia);
-        kentta.Execute(20, 20);
+        kentta.SetTileMethod('l', LuoLattia, "lattia");
+        kentta.Execute(RUUDUN_LEVEYS, RUUDUN_KORKEUS);
     }
 
-    public void LuoSeinat(Vector paikka, double leveys, double korkeus)
+    /// <summary>
+    /// Luodaan seinät.
+    /// </summary>
+    /// <param name="paikka">paikka</param>
+    /// <param name="leveys">palikan leveys</param>
+    /// <param name="korkeus">palikan korkeus</param>
+    /// <param name="kuvaNimi">palikan kuva</param>
+    public void LuoSeinat(Vector paikka, double leveys, double korkeus, string kuvaNimi)
     {
         PhysicsObject seina = new PhysicsObject(leveys, korkeus);
         seina.Position = paikka;
-        //seina.Image = LoadImage("seina");
+        seina.Image = LoadImage(kuvaNimi);
         seina.Tag = "seina";
         seina.Restitution = 1.0;
         seina.MakeStatic();
         Add(seina);
     }
 
+    /// <summary>
+    /// Luodaan ikkunat
+    /// </summary>
+    /// <param name="paikka">paikka</param>
+    /// <param name="leveys">ikkunan leveys</param>
+    /// <param name="korkeus">ikkunan korkaus</param>
     public void LuoIkkunat(Vector paikka, double leveys, double korkeus)
     {
         GameObject ikkuna = new GameObject(leveys, korkeus);
@@ -241,12 +273,17 @@ public class ZombiPeli : PhysicsGame
         Add(ikkuna);
     }
 
-    public void LuoLattia(Vector paikka, double leveys, double korkeus)
+    /// <summary>
+    /// luodaan lattia palikat.
+    /// </summary>
+    /// <param name="paikka">paikka</param>
+    /// <param name="leveys">palikan leveys</param>
+    /// <param name="korkeus">palikan korkaus</param>
+    public void LuoLattia(Vector paikka, double leveys, double korkeus, string kuvaNimi)
     {
         GameObject lattia = new GameObject(leveys, korkeus);
         lattia.Position = paikka;
-        //lattia.Image = LoadImage("lattia");
-        lattia.Color = Level.BackgroundColor;
+        lattia.Image = LoadImage(kuvaNimi);
         lattia.Tag = "lattia";
 
         Add(lattia, 0);
@@ -268,13 +305,12 @@ public class ZombiPeli : PhysicsGame
     {
         PhysicsObject pelaaja = new PhysicsObject(25.0, 25.0);
         pelaaja.Shape = Shape.Circle;
-        pelaaja.Color = Color.DarkBlue;
         pelaaja.X = x;
         pelaaja.Y = y;
         pelaaja.Restitution = 0.0;
         pelaaja.CanRotate = false;
         pelaaja.Tag = "pelaaja";
-        //pelaaja.Image = LoadImage("pelaaja");
+        pelaaja.Image = LoadImage("survivor");
         Add(pelaaja, 1);
         AddCollisionHandler<PhysicsObject, Zombi>(pelaaja, ZombiOsuuPelaajaan);
 
@@ -326,7 +362,8 @@ public class ZombiPeli : PhysicsGame
         zombi.Y = y;
         zombi.Restitution = 0.0;
         zombi.Tag = "zombi";
-        //zombi.Image = LoadImage("zombi");
+        zombi.Image = LoadImage("zombi");
+        zombi.CanRotate = false;
         zombiLaskuri.Value += 1;
         Add(zombi, 1);
 
@@ -546,8 +583,8 @@ public class ZombiPeli : PhysicsGame
     /// <param name="hiirenliike">hiirenliike</param>
     public void Tahtaa(AnalogState hiirenliike)
     {
-        Vector suunta = (Mouse.PositionOnWorld - pelaaja.AbsolutePosition).Normalize();
-        pelaaja.Angle = suunta.Angle;
+        Vector suunta = (Mouse.PositionOnWorld - pelaajanAse.AbsolutePosition).Normalize();
+        pelaajanAse.Angle = suunta.Angle;
     }
 
     #endregion
@@ -610,6 +647,9 @@ public class ZombiPeli : PhysicsGame
 
     #endregion
 
+    /// <summary>
+    /// Pelin lopetus näyttö.
+    /// </summary>
     public void GameOver()
     {
         ClearAll();
